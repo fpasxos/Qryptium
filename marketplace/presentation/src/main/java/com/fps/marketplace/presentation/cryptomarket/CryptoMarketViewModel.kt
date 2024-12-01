@@ -11,6 +11,7 @@ import com.fps.core.domain.marketplace.MarketplaceRepository
 import com.fps.core.domain.util.Result
 import com.fps.core.presentation.ui.asUiText
 import com.fps.marketplace.presentation.cryptomarket.mappers.toCryptoPairUi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +31,23 @@ class CryptoMarketViewModel(
     var textQuery = ""
         private set
 
+    private var tickerJob: Job? = null
+
+    fun startTickers() {
+        tickerJob?.cancel() // Cancel any existing ticker job
+        tickerJob = viewModelScope.launch {
+            while (true) {
+                getTickers()
+                delay(5000)
+            }
+        }
+    }
+
+    fun stopTickers() {
+        tickerJob?.cancel()
+        tickerJob = null
+    }
+
     val networkStatus: StateFlow<NetworkConnectivityState> =
         connectivityManager.networkState().stateIn(
             initialValue = NetworkConnectivityState.Unavailable,
@@ -46,10 +64,7 @@ class CryptoMarketViewModel(
                 }
             }
 
-            while (true) {
-                getTickers()
-                delay(5000)
-            }
+            startTickers()
         }
     }
 

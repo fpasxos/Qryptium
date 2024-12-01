@@ -46,8 +46,8 @@ fun <T> PullToRefreshLazyColumn(
             }
         }
 
-        if (pullToRefreshState.isRefreshing) {
-            LaunchedEffect(true) {
+        LaunchedEffect(pullToRefreshState.isRefreshing) {
+            if (pullToRefreshState.isRefreshing && !isRefreshing) {
                 onRefresh()
             }
         }

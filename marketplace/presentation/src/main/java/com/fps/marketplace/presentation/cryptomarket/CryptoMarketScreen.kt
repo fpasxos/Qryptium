@@ -6,9 +6,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.fps.core.presentation.designsystem.QryptiumTheme
 import com.fps.core.presentation.designsystem.components.ConnectivityStatus
 import com.fps.core.presentation.designsystem.components.ErrorScreen
@@ -25,6 +30,23 @@ import org.koin.androidx.compose.koinViewModel
 fun CryptoMarketScreenRoot(
     viewModel: CryptoMarketViewModel = koinViewModel()
 ) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycle = lifecycleOwner.lifecycle
+    val currentOnStart = rememberUpdatedState(viewModel::startTickers)
+    val currentOnStop = rememberUpdatedState(viewModel::stopTickers)
+
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> currentOnStart.value.invoke()
+                Lifecycle.Event.ON_STOP -> currentOnStop.value.invoke()
+                else -> {}
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+
     CryptoMarketScreen(state = viewModel.state, onAction = { action ->
         when (action) {
             // these lambdas, are empty but if we had to navigate to another screen we would do it here
